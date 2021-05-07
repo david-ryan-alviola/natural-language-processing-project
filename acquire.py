@@ -17,24 +17,19 @@ import requests
 
 from env import github_token, github_username
 
-# TODO: Make a github personal access token.
-#     1. Go here and generate a personal access token https://github.com/settings/tokens
-#        You do _not_ need select any scopes, i.e. leave all the checkboxes unchecked
-#     2. Save it in your env.py file under the variable `github_token`
-# TODO: Add your github username to your env.py file under the variable `github_username`
-# TODO: Add more repositories to the `REPOS` list below.
-
-REPOS = [
-    'Pierian-Data/Complete-Python-3-Bootcamp'
-]
-
 headers = {"Authorization": f"token {github_token}", "User-Agent": github_username}
+
+_endpoint = "https://api.github.com/search/repositories"
+_query = "bootcamp in:name"
+_sort = "stars"
+_per_page = 100
+_order = "desc"
+_max_pages = 10
 
 if headers["Authorization"] == "token " or headers["User-Agent"] == "":
     raise Exception(
         "You need to follow the instructions marked TODO in this script before trying to use it"
     )
-
 
 def github_api_request(url: str) -> Union[List, Dict]:
     response = requests.get(url, headers=headers)
@@ -45,7 +40,6 @@ def github_api_request(url: str) -> Union[List, Dict]:
             f"response: {json.dumps(response_data)}"
         )
     return response_data
-
 
 def get_repo_language(repo: str) -> str:
     url = f"https://api.github.com/repos/{repo}"
@@ -61,7 +55,6 @@ def get_repo_language(repo: str) -> str:
         f"Expecting a dictionary response from {url}, instead got {json.dumps(repo_info)}"
     )
 
-
 def get_repo_contents(repo: str) -> List[Dict[str, str]]:
     url = f"https://api.github.com/repos/{repo}/contents/"
     contents = github_api_request(url)
@@ -72,7 +65,6 @@ def get_repo_contents(repo: str) -> List[Dict[str, str]]:
         f"Expecting a list response from {url}, instead got {json.dumps(contents)}"
     )
 
-
 def get_readme_download_url(files: List[Dict[str, str]]) -> str:
     """
     Takes in a response from the github api that lists the files in a repo and
@@ -82,7 +74,6 @@ def get_readme_download_url(files: List[Dict[str, str]]) -> str:
         if file["name"].lower().startswith("readme"):
             return file["download_url"]
     return ""
-
 
 def process_repo(repo: str) -> Dict[str, str]:
     """
@@ -101,13 +92,40 @@ def process_repo(repo: str) -> Dict[str, str]:
         "readme_contents": readme_contents,
     }
 
+def verify_repo_not_empty(repo_name):
+    """
+    Sends a request to the github api for the given repository and verifies that contents are present based on the status code.
+    """
+    
+    url = f"https://api.github.com/repos/{repo_name}/contents/"
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return True
+    else:
+        return False
+
+def generate_repo_list():
+    """
+    Sends requests to the github API based on the given parameters and returns a list of names of repositories that are not empty.
+    """
+    repos = []
+    
+    for page in range(1, (_max_pages + 1)):
+        response = requests.get(f"{_endpoint}?q={_query}&sort={_sort}&per_page={_per_page}&order={_order}&page={page}",\
+                       headers=headers)
+        payload = response.json()
+        items = payload['items']
+
+        repos += [item['full_name'] for item in items if verify_repo_not_empty(item['full_name'])]
+        
+    return repos
 
 def scrape_github_data() -> List[Dict[str, str]]:
     """
     Loop through all of the repos and process them. Returns the processed data.
     """
-    return [process_repo(repo) for repo in REPOS]
-
+    return [process_repo(repo) for repo in generate_repo_list()]
 
 if __name__ == "__main__":
     data = scrape_github_data()
