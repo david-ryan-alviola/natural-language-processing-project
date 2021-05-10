@@ -33,7 +33,8 @@ def _make_contents_ready_for_nlp_exloration(df):
     bootcamp_readme_df.readme_contents = bootcamp_readme_df.readme_contents.apply(lambda readme : re.sub(r"\n", " ", readme))
 
     bootcamp_readme_df.readme_contents = bootcamp_readme_df.readme_contents.apply(utils.nlp_tokenize)
-    bootcamp_readme_df.readme_contents = bootcamp_readme_df.readme_contents.apply(utils.nlp_remove_stopwords)
+    bootcamp_readme_df.readme_contents = bootcamp_readme_df.readme_contents.apply(utils.nlp_remove_stopwords, extra_words=\
+                                                                                  ['de', 'e', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'])
     bootcamp_readme_df.readme_contents = bootcamp_readme_df.readme_contents.apply(utils.nlp_lemmatize)
     
     return bootcamp_readme_df
