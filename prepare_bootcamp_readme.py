@@ -7,6 +7,7 @@ def prepare_bootcamp_readme_df(df):
     bootcamp_readme_df = df.copy()
     
     bootcamp_readme_df = _drop_nan_empty_rows(bootcamp_readme_df)
+    bootcamp_readme_df = _remove_non_target_languages(bootcamp_readme_df)
     bootcamp_readme_df = _make_contents_ready_for_nlp_exloration(bootcamp_readme_df)
     
     return bootcamp_readme_df
@@ -36,3 +37,9 @@ def _make_contents_ready_for_nlp_exloration(df):
     bootcamp_readme_df.readme_contents = bootcamp_readme_df.readme_contents.apply(utils.nlp_lemmatize)
     
     return bootcamp_readme_df
+
+def _remove_non_target_languages(df):
+    bootcamp_readme_df = df.copy()
+    
+    return bootcamp_readme_df[(bootcamp_readme_df.language == "JavaScript") | (bootcamp_readme_df.language == "Jupyter Notebook") \
+                              | (bootcamp_readme_df.language == "Python") | (bootcamp_readme_df.language == "Java")]
